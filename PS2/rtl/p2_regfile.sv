@@ -85,11 +85,11 @@ module p2_regfile
   // --------------------------------------------------------------------------
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
-      // <-- fill in: clear all registers
+      for (int i = 0; i < NUM_REGS; i++) regs_q[i] <= '0;
+    end else if (wr_i.en && wr_i.addr != '0) begin
+      regs_q[wr_i.addr] <= wr_i.data;
     end
-    // <-- fill in: the guarded write
   end
-
   // --------------------------------------------------------------------------
   // TODO 2b -- the two combinational read ports, WITHOUT bypass for now.
   //
@@ -130,7 +130,17 @@ module p2_regfile
   // real design.
   // --------------------------------------------------------------------------
 
-  assign rs1_data_o = '0;   // <-- replace (2b, then extend for 2c)
-  assign rs2_data_o = '0;   // <-- replace (2b, then extend for 2c)
+    logic rs1_bypass, rs2_bypass;
+
+  assign rs1_bypass = bypass_en_i && wr_i.en && (wr_i.addr == rs1_addr_i);
+  assign rs2_bypass = bypass_en_i && wr_i.en && (wr_i.addr == rs2_addr_i);
+
+  assign rs1_data_o = (rs1_addr_i == '0) ? '0
+                    : rs1_bypass         ? wr_i.data
+                    :                      regs_q[rs1_addr_i];
+  assign rs2_data_o = (rs2_addr_i == '0) ? '0
+                    : rs2_bypass         ? wr_i.data
+                    :                      regs_q[rs2_addr_i];
+
 
 endmodule
